@@ -2,7 +2,7 @@
 # ESPHome Web server for monitoring JK-BMS via UART instead of BLE.
 This project is a fork of excellent JK-BMS monitoring project from https://github.com/syssi/esphome-jk-bms
 
-I have only simpliefied things for my particular use case.
+I have only simpliefied things for very particular plug and play use case.
 
 Tested on: JK-BD6A24S10P (but should work on any jk bms). Read main project esphome-jk-bms for more details.
 ESPHome version: 2023.10.3, compiled using Windows 11
@@ -10,15 +10,22 @@ ESPHome version: 2023.10.3, compiled using Windows 11
 Requirements:
 DOIT ESP32 DEVKITv1 board
 GPIO ribbon
+JST 1.25mm 4 pin connector for JK-BMS
+
+You can prepare the cable according to this collage if you want!
 
 
+![Preparation collage](/images/steps-collage.jpg?raw=true "Preparation Collage")
 
-There are two Steps involved:
+There are three Steps involved:
+
 a. Configuring the code for your particular setup.
+
 b. Preparing your ESP32 board by compiling and flashing the code.
+
 c. Connecting the configured ESP32 to your BMS UART-TTL port and use the web-server IP for monitoring.
 
-![DOIT ESP32 DEVKITv1 PINOUT](ESP32-DevKit-V1-Pinout-Diagram-r0.1-CIRCUITSTATE-Electronics-2.png "DOIT ESP32 DEVKITv1 PINOUT")
+![DOIT ESP32 DEVKITv1 PINOUT](/images/ESP32-DevKit-V1-Pinout-Diagram-r0.1-CIRCUITSTATE-Electronics-2.png?raw=true "DOIT ESP32 DEVKITv1 PINOUT")
 
 ```
 ┌──────────┐                ┌─────────┐
