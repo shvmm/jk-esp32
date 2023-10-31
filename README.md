@@ -1,19 +1,19 @@
-# jk-esp32
 # ESPHome Web server for monitoring JK-BMS via UART instead of BLE.
 This project is a fork of excellent JK-BMS monitoring project from https://github.com/syssi/esphome-jk-bms
 
-I have only simpliefied things for very particular plug and play use case.
+I have only simpliefied things for a very particular 'plug and play' use case.
 
-Tested on: JK-BD6A24S10P (but should work on any jk bms). Read main project esphome-jk-bms for more details.
-ESPHome version: 2023.10.3, compiled using Windows 11
+![Demo Picure](/images/IMG_20231030_154612.jpg "Demonstration")
 
-Requirements:
-DOIT ESP32 DEVKITv1 board
-GPIO ribbon
-JST 1.25mm 4 pin connector for JK-BMS
+Tested on: JK-BD6A24S10P (but should work on any JK BMS). Read main project [ESPHome JK BMS](https://github.com/syssi/esphome-jk-bms "Demonstration") for more details.
+ESPHome version: 2023.10.3, Windows 11
 
-You can prepare the cable according to this collage if you want!
+## 1. Requirements:
+1. Any cheaply available ESP32 board
+2. GPIO ribbon connectors
+3. JST 1.25mm 4 pin connector for JK-BMS
 
+You can easily prepare the BMS and GPIO cable accordingly if you want!
 
 ![Preparation collage](/images/steps-collage.jpg?raw=true "Preparation Collage")
 
@@ -23,10 +23,7 @@ a. Configuring the code for your particular setup.
 
 b. Preparing your ESP32 board by compiling and flashing the code.
 
-c. Connecting the configured ESP32 to your BMS UART-TTL port and use the web-server IP for monitoring.
-
-![DOIT ESP32 DEVKITv1 PINOUT](/images/ESP32-DevKit-V1-Pinout-Diagram-r0.1-CIRCUITSTATE-Electronics-2.png?raw=true "DOIT ESP32 DEVKITv1 PINOUT")
-
+c. Connecting the configured ESP32 to your BMS UART-TTL port and using the web-server IP for monitoring.
 ```
 ┌──────────┐                ┌─────────┐
 │          │<----- RX ----->│         │
@@ -45,33 +42,36 @@ c. Connecting the configured ESP32 to your BMS UART-TTL port and use the web-ser
   │   └─────── GPIO17 (`TX2_pin`)
   └─────────── GND
 ```
-The RX pin of BMS must be connected to TX2 pin of ESP32 board and vice versa.
-Just swap the data pins, if BMS not detected in first try.
+Just swap the RX and TX pins, if BMS is undetected.
 
 
 
-# a. Configuring the code for your setup
+## 2. Configuring the code for your setup:
+
 
 0. Install CP210x Universal Windows Driver
   https://www.silabs.com/developers/usb-to-uart-bridge-vcp-drivers?tab=downloads
 1. Download and install python from https://www.python.org/downloads/
-
-Remember to tick all boxed during installation for path name limit and environment variables for ease of use.
-
+  Remember to tick all boxed during installation for path name limit and environment variables for ease of use.
 2. Open CMD and run
    ```
-   pip install esphome
+   pip3 install esphome
    ```
+   
+3. You can check whether esphome is installed by running
 
-3. Download the release and extract it to a folder.
+   ```
+   esphome version
+   ```
+4. Download the release and extract it to a folder.
   Open secrets.yaml file in the main directory to edit your WIFI SSID and password.
-  Comment and uncomment needed/unneeded sensors in the configuration file.
-  If you have a newer BMS, change to newer protocol.
-5. Right click -> choose Open in Terminal
-6. enter the command
+5. Comment and uncomment needed/unneeded sensors in the configuration file.
+  If you have a newer BMS, you may need to change to a newer protocol.
+6. Right click -> choose Open in Terminal
+  Enter the command
     ```
     esphome run .\esp32-example.yaml
     ```
-7. After compilation is finished, you may be asked to enter the COM port of your ESP32 board. Press 1
-8. Make connections accordingly.
-9. 
+7. After compilation is finished, you may be asked to enter the COM port of your ESP32 board. Press 1 to confirm
+8. Make the connection between the BMS and ESP32 and connect a USB power supply.
+9. The IP for the webserver will be displayed in ESP32 serial log after successful connection to WIFI has been made.
