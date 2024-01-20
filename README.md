@@ -1,5 +1,7 @@
-# ESPHome Web server for monitoring JK-BMS via UART instead of BLE.
+# Clean/Polished ESPHome Web server for monitoring JK-BMS via UART instead of BLE.
 This project is a fork of excellent JK-BMS monitoring project from https://github.com/syssi/esphome-jk-bms
+This project also contains a polished CANBUS implementation from https://github.com/Sleeper85/esphome-jk-bms-can
+The filename is esp32-jk-bms-can.yaml
 
 I have only simpliefied things for a very particular 'plug and play' use case.
 
