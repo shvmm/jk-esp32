@@ -1,9 +1,9 @@
-# JK-BMS-CAN ( Pylontech, GoodWe, SMA, Victron CAN bus protocol )
+# JK-BMS-CAN ( PYLON, Seplos, GoodWe, SMA and Victron CAN bus protocol )
 
-# esp32-jk-bms-can.yaml is free software: you can redistribute it and/or modify
-# it under the terms of the GNU General Public License as published by
-# the Free Software Foundation, either version 3 of the License, or
-# (at your option) any later version.
+# esp32_wire_jk-bms-can.yaml is free software: you can redistribute it
+# and/or modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation, either version 3
+# of the License, or (at your option) any later version.
 #
 # This program is distributed in the hope that it will be useful,
 # but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -13,6 +13,8 @@
 # You should have received a copy of the GNU General Public License
 # along with this program. If not, see <http://www.gnu.org/licenses/gpl.html>.
 
+# V1.16.3 Sleeper85 : ID 0x379 will be sent when choosing protocol 2 or 4 (Battery Capacity for Victron, Sol-Ark and Luxpower)
+# V1.16.2 Sleeper85 : Split the "Charge/Discharge values" section and added instructions for "Stop Discharging" + Set "esp-idf" framework by default
 # V1.16.1 Sleeper85 : Slider charging_current max value = ${charge_a}, Improved Alarm/Charging/Discharging Logic, Improved CAN protocol and Victron support
 # V1.15.5 Sleeper85 : Improved code and set api "reboot_timout" to "0s" by default (no reboot without HA)
 # V1.15.4 Sleeper85 : Improved documentation for API, Web Server and WiFi settings
@@ -32,7 +34,7 @@
 substitutions:
 # +--------------------------------------+
 # name that will appear in esphome and homeassistant.
-  name: jk-bms-can
+  name: jk-can
 # +--------------------------------------+
 # Number of Battery modules max 8. Each LX U5.4-L battery is 5.4kWh, select the number closest to your capactiy eg 3.2V * 280Ah * 16 = 14.3kWh
   batt_modules: "1"
@@ -46,13 +48,13 @@ substitutions:
 # +--------------------------------------+
 # This is max charging amps eg 100A, for Bulk - Constant Current charging(CC), should be at least 10A less than BMS change current protection, 0.5C max
 # 100A * 50V = 5000W
-  charge_a: "50"
-# Float Voltage : corresponds to the voltage at which the battery would be maintained at the end of the absorption phase. (53.6V eg 3.35V/cell for 16 cells 48/51.2V battery)
+  charge_a: "100"
+# Float Voltage : corresponds to the voltage at which the battery would be maintained at the end of the absorption phase. (53.6v eg 3.35v/cell for 16 cells 48V battery)
   float_v: "53.6"
 # Absorption Voltage : corresponds to the Bulk voltage that will be used to charge the battery. (55.2v eg 3.45v/cell for 16 cells 48V battery)
-  absorption_v: "55.2"
+  absorption_v: "56"
 # Absorption time in minutes to hold charge voltage after charge voltage is reached eg 30
-  absorption_time: "02"
+  absorption_time: "2"
 # Absorption offset, x Volts below absorption voltage battery will start the absorption timer, eg 55.2-0.05 = 52.15v
   absorption_offset_v: "0.05"
 # Rebulk offset, x Volts below absorption voltage battery will request rebulk, eg 55.2-2.5 = 52.7v
@@ -62,77 +64,70 @@ substitutions:
 # +--------------------------------------+
 # Max discharge amps eg 120, should be at least 10A less than BMS over discharge current protection, 0.5C max
 # 120A * 50V = 6000W
-  discharge_a: "80"
+  discharge_a: "100"
 # Minimum discharge voltage eg 48v/16 = 3V per cell
   min_discharge_v: "48"
 # +--------------------------------------+
 # | Battery State of Health (SOH)        |
 # +--------------------------------------+
-# Maximum charging cycles is used to calculate the battey SOH to 80%, LF280K v3 =8000.0, LF280K v2 =6000.0, LF280=3000.0 (decimal is required)
+# Maximum charging cycles is used to calculate the battey SOH, LF280K v3 =8000.0, LF280K v2 =6000.0, LF280=3000.0 (decimal is required)
   max_cycles: "3500.0"
 # +--------------------------------------+
 # | CAN Protocol Settings                |
 # +--------------------------------------+
 # CAN BMS Name (0x35E) : 0 NoSent / 1 PYLON / 2 GOODWE / 3 SEPLOS
-  can_bms_name: "2"
+  can_bms_name: "1"
 # CAN Protocol
 # 1 : PYLON 1.2 (Deye)
-# 2 : SEPLOS 1.0, PYLON 1.3, GOODWE 1.5
+# 2 : SEPLOS 1.0, PYLON 1.3, GOODWE 1.5 (GoodWe, Sol-Ark, Luxpower)
 # 3 : SMA (Sunny Island)
 # 4 : VICTRON
-  can_protocol: "2"
-
+  can_protocol: "1"
 # +--------------------------------------+
 # | ESP32 CAN/serial port pins           |
 # +--------------------------------------+
-# GPIO pins your CAN bus transceiver(TJA1050 or TJA1051T) is connected to the ESP, note! TX->TX and RX->RX. Swap PINS if necessary.
+# GPIO pins your CAN bus transceiver (TJA1050, TJA1051T or SN65HVD230) is connected to the ESP32 TX->TX and RX->RX !
   can_tx_pin: GPIO23
   can_rx_pin: GPIO22
-# GPIO pins your JK-BMS RS485(TTL) is connected to the ESP TX->RX and RX->TX. Swap PINS if necessary.
-  tx_pin: GPIO16
+# GPIO pins your JK-BMS UART-TTL is connected to the ESP32 TX->RX and RX->TX !
+  tx_pin: GPIO16 
   rx_pin: GPIO17
 
-# +--------------------------------------+
-# | ** Don't make changes below this **  |
-# +--------------------------------------+
+# +------------------------------------------------------------------+
+# | ** The settings below can be modified according to your needs ** |
+# +------------------------------------------------------------------+
   external_components_source: components
   # components
   # github://syssi/esphome-jk-bms@main
-
   device_description: "JK-BMS CAN using UART-TTL"
-  
+
+external_components:
+  - source: ${external_components_source}
+    refresh: 0s
+
 esphome:
   name: ${name}
-  friendly_name: ESPHome JK-BD6A24S10P
   comment: ${device_description}
-
-  # project:
-  #   name: "shivam.espjk-bms"
-  #   version: 1.5.0
-
+  friendly_name: JK-BD6A24S10P
   on_boot:
     then:
       - switch.turn_on: switch_charging
       - switch.turn_on: switch_discharging
       - switch.turn_on: switch_chg_float
 
+# +--------------------------------------+
+# | ESP32 settings                       |
+# +--------------------------------------+
+# For a stable Bluetooth connection keep the "esp-idf" framework instead of arduino
 esp32:
   board: esp32doit-devkit-v1
   framework:
-    type: arduino
+    type: esp-idf
 
-external_components:
-  - source: ${external_components_source}
-    refresh: 0s
-    
+ota:
+
 logger:
-  level: DEBUG
-
-# ota:
-
-# +------------------------------------------------------------------+
-# | ** The settings below can be modified according to your needs ** |
-# +------------------------------------------------------------------+
+  level: INFO
 
 # Please use the native `api` component instead of the `mqtt` section.
 # If you use Home Assistant, the native API is more lightweight.
@@ -151,23 +146,17 @@ logger:
 #  id: mqtt_client
 
 # In the event of problems with the WiFi network, the ESP32 will reboot every 15 minutes to try to resolve the problem.
-# If we don't want to connect the ESP32 to the WiFi network please remove the 4 lines below.
+# If you don't want to connect the ESP32 to the WiFi network please remove the 4 lines below.
 
 wifi:
   power_save_mode: none
   ssid: !secret wifi_ssid
   password: !secret wifi_password
+  # domain: !secret domain
 
 web_server:
-  # js_include: "./v2/www.js"
-  # js_url: ""
-  version: 2
-  ota: false
-
-#web_server:
-#  port: 80
-#  log: false
-#  ota: false
+  # port: 80
+  log: false
 
 # +--------------------------------------+
 # | ** Don't make changes below this **  |
@@ -220,6 +209,10 @@ light:
     name: "Builtin LED"
     internal: true
 
+# +--------------------------------------+
+# | JK-BMS UART connection               |
+# +--------------------------------------+
+
 uart:
   id: uart_0
   baud_rate: 115200
@@ -232,12 +225,413 @@ uart:
 jk_modbus:
   id: modbus0
   uart_id: uart_0
+  # rx_timeout: 50ms
 
 jk_bms:
   id: bms0
   jk_modbus_id: modbus0
+  # update_interval: 5s
   # enable_fake_traffic: true
 
+# +--------------------------------------+
+
+binary_sensor:
+  - platform: jk_bms
+    balancing:
+      name: "${name} balancing"
+    balancing_switch:
+      name: "${name} balancing switch"
+    charging:
+      name: "${name} charging"
+
+    charging_switch:
+      id: charging_switch
+      name: "${name} charging switch"
+
+    discharging:
+      name: "${name} discharging"
+
+    discharging_switch:
+      id: discharging_switch
+      name: "${name} discharging switch"
+
+    dedicated_charger_switch:
+      name: "${name} dedicated charger switch"
+    online_status:
+      name: "${name} online status"
+
+sensor:
+  - platform: jk_bms
+    min_cell_voltage:
+      id: min_cell_voltage
+      name: "${name} Min cell voltage"
+    max_cell_voltage:
+      id: max_cell_voltage
+      name: "${name} Max cell voltage"
+    min_voltage_cell:
+      id: min_voltage_cell
+      name: "${name} Min voltage cell"
+    max_voltage_cell:
+      id: max_voltage_cell
+      name: "${name} Max voltage cell"
+    delta_cell_voltage:
+      name: "${name} delta cell voltage"
+    average_cell_voltage:
+      name: "${name} avg cell voltage"
+    cell_voltage_1:
+      name: "${name} cell voltage 01"
+    cell_voltage_2:
+      name: "${name} cell voltage 02"
+    cell_voltage_3:
+      name: "${name} cell voltage 03"
+    cell_voltage_4:
+      name: "${name} cell voltage 04"
+    cell_voltage_5:
+      name: "${name} cell voltage 05"
+    cell_voltage_6:
+      name: "${name} cell voltage 06"
+    cell_voltage_7:
+      name: "${name} cell voltage 07"
+    cell_voltage_8:
+      name: "${name} cell voltage 08"
+    cell_voltage_9:
+      name: "${name} cell voltage 09"
+    cell_voltage_10:
+      name: "${name} cell voltage 10"
+    cell_voltage_11:
+      name: "${name} cell voltage 11"
+    cell_voltage_12:
+      name: "${name} cell voltage 12"
+    cell_voltage_13:
+      name: "${name} cell voltage 13"
+    cell_voltage_14:
+      name: "${name} cell voltage 14"
+    cell_voltage_15:
+      name: "${name} cell voltage 15"
+    cell_voltage_16:
+      name: "${name} cell voltage 16"
+#    cell_voltage_17:
+#      name: "${name} cell voltage 17"
+#    cell_voltage_18:
+#      name: "${name} cell voltage 18"
+#    cell_voltage_19:
+#      name: "${name} cell voltage 19"
+#    cell_voltage_20:
+#      name: "${name} cell voltage 20"
+#    cell_voltage_21:
+#      name: "${name} cell voltage 21"
+#    cell_voltage_22:
+#      name: "${name} cell voltage 22"
+#    cell_voltage_23:
+#      name: "${name} cell voltage 23"
+#    cell_voltage_24:
+#      name: "${name} cell voltage 24"
+    power_tube_temperature:
+      id: power_tube_temperature
+      name: "${name} MOS temp"
+    temperature_sensor_1:
+      id: temperature_sensor_1
+      name: "${name} temperature 1"
+    temperature_sensor_2:
+      id: temperature_sensor_2
+      name: "${name} temperature 2"
+    total_voltage:
+      id: total_voltage
+      name: "${name} total voltage"
+    current:
+      id: current
+      name: "${name} current"
+    power:
+      name: "${name} Power"
+    # charging_power:
+    #   name: "${name} charging power"
+    # discharging_power:
+    #   name: "${name} discharging power"
+    capacity_remaining:
+      id: capacity_remaining
+      name: "${name} capacity remaining"
+    # capacity_remaining_derived:
+    #   name: "${name} capacity remaining Ah"
+    # temperature_sensors:
+    #   name: "${name} temperature sensors"
+    charging_cycles:
+      id: charging_cycles
+      name: "${name} cycle count"
+    total_charging_cycle_capacity:
+      name: "${name} total cycled Ah"
+    # battery_strings:
+    #   name: "${name} battery strings"
+    errors_bitmask:
+      id: errors_bitmask
+      name: "${name} errors bitmask"
+    operation_mode_bitmask:
+      name: "${name} operation mode bitmask"
+    
+    # total_voltage_overvoltage_protection:
+    #   name: "${name} total OVP"
+    # total_voltage_undervoltage_protection:
+    #   name: "${name} total UVP"
+    
+    # cell_voltage_overvoltage_delay:
+    #   name: "${name} cell OVP delay"
+    # cell_voltage_overvoltage_protection:
+    #   name: "${name} cell OVP"
+    # cell_voltage_overvoltage_recovery:
+    #   name: "${name} cell OVP recovery"
+    
+    # cell_voltage_undervoltage_delay:
+    #   name: "${name} cell UVP delay"
+    # cell_voltage_undervoltage_protection:
+    #   name: "${name} cell UVP"
+    # cell_voltage_undervoltage_recovery:
+    #   name: "${name} cell UVP recovery"
+    
+    # Cell ΔV protection is 0.300 V
+    # cell_pressure_difference_protection:
+    #   name: "${name} cell ΔV protection"
+    
+    # discharging_overcurrent_delay:
+    #   name: "${name} discharging OCP delay"
+    # discharging_overcurrent_protection:
+    #   name: "${name} discharging OCP"
+    # charging_overcurrent_delay:
+    #   name: "${name} charging OCP delay"
+    # charging_overcurrent_protection:
+    #   name: "${name} charging OCP"
+    
+    # balance_starting_voltage:
+    #   name: "${name} balance starting voltage"
+    # balance_opening_pressure_difference:
+    #   name: "${name} balance ΔV trigger"
+    
+    # MOS Temp Protection = 90 C, Recovery = 70 C
+    # power_tube_temperature_protection:
+    #   name: "${name} power tube temperature protection"
+    # power_tube_temperature_recovery:
+    #   name: "${name} power tube temperature recovery"
+
+    # Temp sensor protection temp = 100 C
+    # Temp sensor recovery temp = 100 C
+    # Temp sensor difference protection = 20 C
+    # temperature_sensor_temperature_protection:
+    #   name: "${name} temperature sensor temperature protection"
+    # temperature_sensor_temperature_recovery:
+    #   name: "${name} temperature sensor temperature recovery"
+    # temperature_sensor_temperature_difference_protection:
+    #   name: "${name} temperature sensor temperature difference protection"
+
+    # Charging HTP, LTP, LTR = 55, 0, 5
+    # Discharging HTP, LTP, LTR = 60, -20, -10
+    # 
+    # charging_high_temperature_protection:
+    #   name: "${name} charging high temperature protection"
+    # charging_low_temperature_protection:
+    #   name: "${name} charging low temperature protection"
+    # charging_low_temperature_recovery:
+    #   name: "${name} charging low temperature recovery"
+    # discharging_high_temperature_protection:
+    #   name: "${name} discharging high temperature protection"
+    # discharging_low_temperature_protection:
+    #   name: "${name} discharging low temperature protection"
+    # discharging_low_temperature_recovery:
+    #   name: "${name} discharging low temperature recovery"
+
+    total_battery_capacity_setting:
+      id: total_battery_capacity_setting
+      name: "${name} set battery capacity"
+
+  # +--------------------------------------+
+  # | Useful comments                      |
+  # | Dev_addr = 1                         |
+  # | Sleep wait = 10 s                    |
+  # | Alarm low = 20%                      |
+  # +--------------------------------------+
+    # current_calibration:
+    #   name: "${name} current calibration"
+    # device_address:
+    #   name: "${name} device address"
+    # sleep_wait_time:
+    #   name: "${name} sleep wait time"
+    # alarm_low_volume:
+    #   name: "${name} alarm low volume"
+    manufacturing_date:
+      name: "${name} manufacturing date"
+    # total_runtime:
+    #   name: "${name} total runtime"
+    # start_current_calibration:
+    #   name: "${name} start current calibration"
+    actual_battery_capacity:
+      name: "${name} actual battery capacity"
+    # protocol_version:
+    #   name: "${name} protocol version"
+
+  # +--------------------------------------+
+  # | Uptime sensor                        |
+  # +--------------------------------------+
+  - platform: uptime
+    name: ${name} Uptime Sensor
+    id: uptime_sensor
+    update_interval: 60s
+    on_raw_value:
+      then:
+        - text_sensor.template.publish:
+            id: uptime_human
+            state: !lambda |-
+              int seconds = round(id(uptime_sensor).raw_state);
+              int days = seconds / (24 * 3600);
+              seconds = seconds % (24 * 3600);
+              int hours = seconds / 3600;
+              seconds = seconds % 3600;
+              int minutes = seconds /  60;
+              seconds = seconds % 60;
+              return (
+                (days ? to_string(days) + "d " : "") +
+                (hours ? to_string(hours) + "h " : "") +
+                (minutes ? to_string(minutes) + "m " : "") +
+                (to_string(seconds) + "s")
+              ).c_str();
+
+text_sensor:
+  - platform: jk_bms
+    errors:
+      name: "${name} errors"
+    operation_mode:
+      name: "${name} operation mode"
+    
+    # password:
+    #   name: "${name} password"
+
+    # Battery Type = LiFePO4
+    # battery_type:
+    #   name: "${name} battery type"
+
+    # device_type | manufacturer = USER string
+    # device_type:
+    #   name: "${name} device type"
+    # manufacturer:
+    #   name: "${name} USER string"
+    # software_version:
+    #   name: "${name} hw/sw ver."
+    total_runtime_formatted:
+      name: "${name} total runtime formatted"
+  # +--------------------------------------+
+  # | Template text sensors                |
+  # +--------------------------------------+
+  - platform: template
+    name: ${name} Uptime Human Readable
+    id: uptime_human
+    icon: mdi:clock-start
+  - platform: template
+    name: "${name} Charging Status"
+    id: charging_status
+  - platform: template
+    name: "${name} CANBUS Status"
+    id: canbus_status
+
+# +--------------------------------------+
+# | Slider                               |
+# +--------------------------------------+
+number:
+  - platform: template
+    name: "${name} Bulk charge Voltage"
+    id: "bulk_voltage"
+    step: 0.1
+    min_value: 53.6
+    max_value: 57.6
+    mode: slider
+    initial_value: "${absorption_v}"
+    unit_of_measurement: V
+    icon: mdi:battery-charging
+    optimistic: true
+  - platform: template
+    name: "${name} Float voltage"
+    id: "float_voltage"
+    step: 0.1
+    min_value: 53
+    max_value: 56
+    mode: slider
+    initial_value: "${float_v}"
+    unit_of_measurement: V
+    icon: mdi:battery-charging
+    optimistic: true
+  - platform: template
+    name: "${name} Charging current max"
+    id: "charging_current"
+    step: 1
+    min_value: 0
+    max_value: "${charge_a}"
+    mode: slider
+    initial_value: "${charge_a}"
+    unit_of_measurement: A
+    icon: mdi:current-dc
+    optimistic: true
+  - platform: template
+    name: "${name} Rebulk Offset V."
+    id: "rebulk_offset"
+    step: 0.2
+    min_value: 0
+    max_value: 4
+    mode: slider
+    initial_value: "${rebulk_offset_v}"
+    unit_of_measurement: V
+    icon: mdi:sine-wave
+    optimistic: true
+  - platform: template
+    name: "${name} Absorption time"
+    id: "absorption_time"
+    step: 1
+    min_value: 0
+    max_value: 180
+    mode: slider
+    initial_value: "${absorption_time}"
+    unit_of_measurement: min
+    icon: mdi:clock-start
+    optimistic: true
+  - platform: template
+    name: "${name} Absorption Offset V."
+    id: "absorption_offset"
+    step: 0.05
+    min_value: 0
+    max_value: 1
+    mode: slider
+    initial_value: "${absorption_offset_v}"
+    unit_of_measurement: V
+    icon: mdi:sine-wave
+    optimistic: true
+
+script:
+  - id: absorption_script
+    then:
+      - lambda: id(charge_status) = "Absorption";
+      # delay value in ms
+      - delay: !lambda "return id(absorption_time).state * 60 * 1000;"
+      - lambda: id(charge_status) = "Wait";
+
+switch:
+  - platform: template
+    name: ${name} Charge enabled
+    id: switch_charging
+    optimistic: true
+  - platform: template
+    name: ${name} Discharge enabled
+    id: switch_discharging
+    optimistic: true
+  - platform: template
+    name: ${name} Bulk manually (top bal)
+    id: switch_chg_bulk
+    optimistic: true
+  - platform: template
+    name: ${name} Float enabled
+    id: switch_chg_float
+    optimistic: true
+  
+  - platform: jk_bms
+    charging:
+      name: "${name} BMS charge MOS"
+
+# +--------------------------------------+
+# | CAN bus script                       |
+# +--------------------------------------+
 canbus:
   - platform: esp32_can
     tx_pin: ${can_tx_pin}
@@ -260,7 +654,7 @@ interval:
     then:
       - lambda: id(can_ack_counter) = 0;                          // Reset ACK counter for test inverter ACK
           
-  - interval: 50ms
+  - interval: 100ms
     then:
       # Start CAN Handling
       - if:
@@ -291,7 +685,7 @@ interval:
           then:
             - if:
                 condition:
-                  lambda: return ((id(can_msg_counter) == 1) & (${can_protocol} == 1 | ${can_protocol} == 2));
+                  lambda: return ((id(can_msg_counter) == 1) & ((${can_protocol} == 1) | (${can_protocol} == 2)));
                 then:
                   canbus.send: # Protection Alarms, Warning and Flags ( Pylontech / Goodwe / Seplos )
                     can_id: 0x359
@@ -367,6 +761,7 @@ interval:
                          }
                          if ((jk_errormask & 0x1000) | (jk_errormask & 0x2000)) {                                      // BMS internal error JK bit 12,13
                             can_mesg[1] = can_mesg[1] | 0x08;                                                          // byte1_bit3 (0x08 = bin 1000)
+                            id(alarm_status) = "BMS";
                             ESP_LOGI("main", "BMS internal error JK bit 12,13 - can_msg[1] : %x", can_mesg[1]);
                          }
                          if ((jk_errormask & 0x80)) {                                                                  // Cell Imbalance JK bit 7
@@ -400,7 +795,7 @@ interval:
                       
             - if:
                 condition:
-                  lambda: return ((id(can_msg_counter) == 1) & (${can_protocol} == 3 | ${can_protocol} == 4));
+                  lambda: return ((id(can_msg_counter) == 1) & ((${can_protocol} == 3) | (${can_protocol} == 4)));
                 then:
                   canbus.send: # Protection Alarms and Warning ( SMA / Victron )
                     can_id: 0x35A
@@ -448,6 +843,7 @@ interval:
                          }
                          if ((jk_errormask & 0x1000) | (jk_errormask & 0x2000)) {                                      // BMS.Internal.Error JK bit 12,13
                             can_mesg[2] = can_mesg[2] | 0x40;                                                          // byte2_bit6 (0x40 = bin 1000000)
+                            id(alarm_status) = "BMS";
                             ESP_LOGI("main", "BMS internal error JK bit 12,13 - can_msg[2] : %x", can_mesg[2]);
                          }
                          if ((jk_errormask & 0x80)) {                                                                  // Cell.Imbalance JK bit 7
@@ -469,10 +865,10 @@ interval:
                     can_id: 0x351
                     data: !lambda |-
                       
-                      // +----------------+
-                      // | Charging Logic |
-                      // +----------------+
-                      
+                      // +--------------------------------------+
+                      // | Charging Logic                       |
+                      // +--------------------------------------+
+
                       // Warning : information from JK BMS is not available immediately after boot
                       
                       // Alarm : if JK-BMS alarm !
@@ -483,7 +879,7 @@ interval:
                       else if ((id(errors_bitmask).state < 2) & (id(charge_status) == "Alarm")) {
                            id(charge_status) = "Wait";
                       }
-                      // Disabled : charging disabled if BMS or ESP switch is OFF
+                      // Disabled : charging disabled if BMS or ESP32 switch is OFF
                       else if ((!id(charging_switch).state) | (!id(switch_charging).state)) {
                            id(charge_status) = "Disabled";
                       }
@@ -518,52 +914,62 @@ interval:
                            id(charge_status) = "Wait";
                       }
                       
-                      // +-------------------------------+
-                      // | Charging / Discharging values |
-                      // +-------------------------------+
+                      // +--------------------------------------+
+                      // | Charge values                        |
+                      // +--------------------------------------+
 
-                      ESP_LOGI("main", "Alarm Status : %s", id(alarm_status).c_str());
-                      
-                      // Alarm : Stop Charging and Discharging
-                      if (id(alarm_status) == "OTP"){
-                           id(charging_v) = 51.2;
-                           id(charging_a) = 0;
-                           id(discharging_a) = 0;
-                      }
-                      // Alarm : Stop Charging
-                      else if (id(alarm_status) == "OVP" | id(alarm_status) == "UTP" | id(alarm_status) == "COCP"){
-                           id(charging_v) = 51.2;
-                           id(charging_a) = 0;
-                           id(discharging_a) = ${discharge_a};
-                      }
-                      // Alarm : Stop Discharging
-                      else if (id(alarm_status) == "UVP" | id(alarm_status) == "DOCP"){
-                           id(charging_v) = id(bulk_voltage).state;
-                           id(charging_a) = id(charging_current).state;
-                           id(discharging_a) = 0;
-                      }
                       // Bulk Charge
-                      else if ((id(charge_status) == "Bulk") | (id(charge_status) == "Bulk Manually") | (id(charge_status) == "Absorption")) {
+                      if ((id(charge_status) == "Bulk") | (id(charge_status) == "Bulk Manually") | (id(charge_status) == "Absorption")) {
                            id(charging_v) = id(bulk_voltage).state;
                            id(charging_a) = id(charging_current).state;
-                           id(discharging_a) = ${discharge_a};
                       }
                       // Float Charge
                       else if (id(charge_status) == "Float") {
                            id(charging_v) = id(float_voltage).state;
                            id(charging_a) = id(charging_current).state;
-                           id(discharging_a) = ${discharge_a};
                       }
                       // Disabled or Wait : Stop Charging
-                      else {
+                      else if ((id(charge_status) == "Disabled") | (id(charge_status) == "Wait")) {
                            id(charging_v) = round(id(total_voltage).state * 10)/10;     // Actual battery voltage
                            id(charging_a) = 0;
-                           id(discharging_a) = ${discharge_a};
                       }
                       
-                      // +--------------+
-                      // | CAN messages |
-                      // +--------------+
+                      // +--------------------------------------+
+                      // | Discharge values                     |
+                      // +--------------------------------------+
+
+                      // Stop Discharging if BMS or ESP32 switch is OFF
+                      if ((!id(discharging_switch).state) | (!id(switch_discharging).state)) id(discharging_a) = 0;
+                      // Stop Discharging if battery voltage is low
+                      else if (id(total_voltage).state <= ${min_discharge_v}) id(discharging_a) = 0;
+                      // Discharging is OK
+                      else id(discharging_a) = ${discharge_a};
+
+                      // +--------------------------------------+
+                      // | Alarm overwrite values               |
+                      // +--------------------------------------+
+
+                      ESP_LOGI("main", "Alarm Status : %s", id(alarm_status).c_str());
+                      
+                      // Alarm : Stop Charging and Discharging
+                      if ((id(alarm_status) == "OTP") | (id(alarm_status) == "BMS")){
+                           id(charging_v) = 51.2;
+                           id(charging_a) = 0;
+                           id(discharging_a) = 0;
+                      }
+                      // Alarm : Stop Charging
+                      else if ((id(alarm_status) == "OVP") | (id(alarm_status) == "UTP") | (id(alarm_status) == "COCP")){
+                           id(charging_v) = 51.2;
+                           id(charging_a) = 0;
+                      }
+                      // Alarm : Stop Discharging
+                      else if ((id(alarm_status) == "UVP") | (id(alarm_status) == "DOCP")){
+                           id(discharging_a) = 0;
+                      }
+                      
+                      // +--------------------------------------+
+                      // | CAN messages                         |
+                      // +--------------------------------------+
                       
                       // Byte [00:01] = CVL : Charge Limit Voltage
                       // Byte [02:03] = CCL : Charge Limit Current
@@ -624,7 +1030,7 @@ interval:
                       
             - if:
                 condition:
-                  lambda: return ((id(can_msg_counter) == 5) & (${can_protocol} == 1 | ${can_protocol} == 2));
+                  lambda: return ((id(can_msg_counter) == 5) & ((${can_protocol} == 1) | (${can_protocol} == 2)));
                 then:
                   canbus.send: # Request flag to Enable/Disable: Charge, Discharge ( Pylontech / Goodwe / Seplos )
                     can_id: 0x35C
@@ -853,7 +1259,7 @@ interval:
 
             - if:
                 condition:
-                  lambda: return ((id(can_msg_counter) == 9) & (${can_protocol} == 4));
+                  lambda: return ((id(can_msg_counter) == 9) & ((${can_protocol} == 2) | (${can_protocol} == 4)));
                 then:
                   - canbus.send: # Battery Installed Capacity Ah ( Victron, Sol-Ark, Luxpower )
                       can_id: 0x379
@@ -877,7 +1283,7 @@ interval:
 
             - if:
                 condition:
-                  lambda: return ((id(can_msg_counter) == 11) & (${can_protocol} == 3 | ${can_protocol} == 4));
+                  lambda: return ((id(can_msg_counter) == 11) & ((${can_protocol} == 3) | (${can_protocol} == 4)));
                 then:
                   - canbus.send: # Battery information ( SMA, Victron )
                       can_id: 0x35F
@@ -919,380 +1325,3 @@ interval:
                         }
                     # Reset counter
                   - lambda: id(can_msg_counter) = 0;
-                      
-binary_sensor:
-  - platform: jk_bms
-    balancing:
-      name: "${name} balancing"
-    balancing_switch:
-      name: "${name} balancing switch"
-    charging:
-      name: "${name} charging"
-    charging_switch:
-      id: charging_switch
-      name: "${name} charging switch"
-    discharging:
-      name: "${name} discharging"
-    discharging_switch:
-      id: discharging_switch
-      name: "${name} discharging switch"
-    dedicated_charger_switch:
-      name: "${name} dedicated charger switch"
-
-sensor:
-  - platform: jk_bms
-    min_cell_voltage:
-      id: min_cell_voltage
-      name: "${name} min cell voltage"
-    max_cell_voltage:
-      id: max_cell_voltage
-      name: "${name} max cell voltage"
-    min_voltage_cell:
-      id: min_voltage_cell
-      name: "${name} min voltage cell"
-    max_voltage_cell:
-      id: max_voltage_cell
-      name: "${name} max voltage cell"
-    delta_cell_voltage:
-      name: "${name} delta cell voltage"
-    average_cell_voltage:
-      name: "${name} average cell voltage"
-    cell_voltage_1:
-      name: "${name} cell voltage 01"
-    cell_voltage_2:
-      name: "${name} cell voltage 02"
-    cell_voltage_3:
-      name: "${name} cell voltage 03"
-    cell_voltage_4:
-      name: "${name} cell voltage 04"
-    cell_voltage_5:
-      name: "${name} cell voltage 05"
-    cell_voltage_6:
-      name: "${name} cell voltage 06"
-    cell_voltage_7:
-      name: "${name} cell voltage 07"
-    cell_voltage_8:
-      name: "${name} cell voltage 08"
-    cell_voltage_9:
-      name: "${name} cell voltage 09"
-    cell_voltage_10:
-      name: "${name} cell voltage 10"
-    cell_voltage_11:
-      name: "${name} cell voltage 11"
-    cell_voltage_12:
-      name: "${name} cell voltage 12"
-    cell_voltage_13:
-      name: "${name} cell voltage 13"
-    cell_voltage_14:
-      name: "${name} cell voltage 14"
-    cell_voltage_15:
-      name: "${name} cell voltage 15"
-    cell_voltage_16:
-      name: "${name} cell voltage 16"
-
-#    cell_voltage_17:
-#      name: "${name} cell voltage 17"
-#    cell_voltage_18:
-#      name: "${name} cell voltage 18"
-#    cell_voltage_19:
-#      name: "${name} cell voltage 19"
-#    cell_voltage_20:
-#      name: "${name} cell voltage 20"
-#    cell_voltage_21:
-#      name: "${name} cell voltage 21"
-#    cell_voltage_22:
-#      name: "${name} cell voltage 22"
-#    cell_voltage_23:
-#      name: "${name} cell voltage 23"
-#    cell_voltage_24:
-#      name: "${name} cell voltage 24"
-
-    power_tube_temperature:
-      id: power_tube_temperature
-      name: "${name} BMS MOS Temp"
-    temperature_sensor_1:
-      id: temperature_sensor_1
-      name: "${name} Battery T1"
-    temperature_sensor_2:
-      id: temperature_sensor_2
-      name: "${name} Battery T2"
-
-    total_voltage:
-      id: total_voltage
-      name: "${name} Battery V_dc"
-    current:
-      id: current
-      name: "${name} Current"
-    power:
-      name: "${name} Power"
-
-    # charging_power:
-    #   name: "${name} charging power"
-    # discharging_power:
-    #   name: "${name} discharging power"
-
-    capacity_remaining:
-      id: capacity_remaining
-      name: "${name} capacity remaining"
-
-    # capacity_remaining_derived:
-    #   name: "${name} capacity remaining derived"
-    # temperature_sensors:
-    #   name: "${name} temperature sensors"
-
-    charging_cycles:
-      name: "${name} charging cycles"
-      id: charging_cycles
-    total_charging_cycle_capacity:
-      name: "${name} total cycled capacity"
-
-    # battery_strings:
-    #   name: "${name} battery strings"
-
-    errors_bitmask:
-      id: errors_bitmask
-      name: "${name} errors bitmask"
-    operation_mode_bitmask:
-      name: "${name} operation mode bitmask"
-
-    # total_voltage_overvoltage_protection:
-    #   name: "${name} total voltage overvoltage protection"
-    # total_voltage_undervoltage_protection:
-    #   id: total_voltage_undervoltage_protection
-    #   name: "${name} total voltage undervoltage protection"
-
-    # cell_voltage_overvoltage_protection:
-    #   name: "${name} cell voltage overvoltage protection"
-    # cell_voltage_overvoltage_recovery:
-    #   name: "${name} cell voltage overvoltage recovery"
-    # cell_voltage_overvoltage_delay:
-    #   name: "${name} cell voltage overvoltage delay"
-
-    # cell_voltage_undervoltage_protection:
-    #   name: "${name} cell voltage undervoltage protection"
-    # cell_voltage_undervoltage_recovery:
-    #   name: "${name} cell voltage undervoltage recovery"
-    # cell_voltage_undervoltage_delay:
-    #   name: "${name} cell voltage undervoltage delay"
-
-
-    # cell_pressure_difference_protection:
-    #   name: "${name} cell pressure difference protection"
-    # discharging_overcurrent_protection:
-    #   id: discharging_overcurrent_protection
-    #   name: "${name} discharging overcurrent protection"
-    # discharging_overcurrent_delay:
-    #   name: "${name} discharging overcurrent delay"
-
-
-    # charging_overcurrent_protection:
-    #   id: charging_overcurrent_protection
-    #   name: "${name} charging overcurrent protection"
-    # charging_overcurrent_delay:
-    #   name: "${name} charging overcurrent delay"
-    # balance_starting_voltage:
-    #   name: "${name} balance starting voltage"
-    # balance_opening_pressure_difference:
-    #   name: "${name} balance opening pressure difference"
-
-    # power_tube_temperature_protection:
-    #   name: "${name} power tube temperature protection"
-    # power_tube_temperature_recovery:
-    #   name: "${name} power tube temperature recovery"
-
-    # temperature_sensor_temperature_protection:
-    #   name: "${name} temperature sensor temperature protection"
-    # temperature_sensor_temperature_recovery:
-    #   name: "${name} temperature sensor temperature recovery"
-    # temperature_sensor_temperature_difference_protection:
-    #   name: "${name} temperature sensor temperature difference protection"
-
-    # charging_high_temperature_protection:
-    #   name: "${name} charging high temperature protection"
-    # discharging_high_temperature_protection:
-    #   name: "${name} discharging high temperature protection"
-
-    # charging_low_temperature_protection:
-    #   name: "${name} charging low temperature protection"
-    # charging_low_temperature_recovery:
-    #   name: "${name} charging low temperature recovery"
-
-    # discharging_low_temperature_protection:
-    #   name: "${name} discharging low temperature protection"
-    # discharging_low_temperature_recovery:
-    #   name: "${name} discharging low temperature recovery"
-
-
-    total_battery_capacity_setting:
-      id: total_battery_capacity_setting
-      name: "${name} total battery capacity setting"
-    current_calibration:
-      name: "${name} current calibration"
-
-    device_address:
-      name: "${name} device address"
-    sleep_wait_time:
-      name: "${name} sleep wait time"
-    alarm_low_volume:
-      name: "${name} alarm low volume"
-
-    manufacturing_date:
-      name: "${name} manufacturing date"
-      
-    total_runtime:
-      name: "${name} total runtime"
-#    start_current_calibration:
-#      name: "${name} start current calibration"
-    actual_battery_capacity:
-      name: "${name} actual battery capacity"
-#    protocol_version:
-#      name: "${name} protocol version"
-
-# Uptime sensor
-  - platform: uptime
-    name: ${name} Uptime Sensor
-    id: uptime_sensor
-    update_interval: 60s
-    on_raw_value:
-      then:
-        - text_sensor.template.publish:
-            id: uptime_human
-            state: !lambda |-
-              int seconds = round(id(uptime_sensor).raw_state);
-              int days = seconds / (24 * 3600);
-              seconds = seconds % (24 * 3600);
-              int hours = seconds / 3600;
-              seconds = seconds % 3600;
-              int minutes = seconds /  60;
-              seconds = seconds % 60;
-              return (
-                (days ? to_string(days) + "d " : "") +
-                (hours ? to_string(hours) + "h " : "") +
-                (minutes ? to_string(minutes) + "m " : "") +
-                (to_string(seconds) + "s")
-              ).c_str();
-
-text_sensor:
-  - platform: jk_bms
-    errors:
-      name: "${name} errors"
-    operation_mode:
-      name: "${name} operation mode"
-    battery_type:
-      name: "${name} battery type"
-#    password:
-#      name: "${name} password"
-    device_type:
-      name: "${name} device type"
-    # software_version:
-    #   name: "${name} software version"
-    manufacturer:
-      name: "${name} USER string"
-    total_runtime_formatted:
-      name: "${name} runtime days"
-# Template text sensors
-  - platform: template
-    name: ${name} Uptime Human Readable
-    id: uptime_human
-    icon: mdi:clock-start
-  - platform: template
-    name: "${name} Charging Status"
-    id: charging_status
-  - platform: template
-    name: "${name} CANBUS Status"
-    id: canbus_status
-
-# Slider
-number:
-  - platform: template
-    name: "${name} Bulk voltage"
-    id: "bulk_voltage"
-    step: 0.1
-    min_value: 53.6
-    max_value: 57.6
-    mode: slider
-    initial_value: "${absorption_v}"
-    unit_of_measurement: V
-    icon: mdi:battery-charging
-    optimistic: true
-  - platform: template
-    name: "${name} Float voltage"
-    id: "float_voltage"
-    step: 0.1
-    min_value: 53
-    max_value: 54.8
-    mode: slider
-    initial_value: "${float_v}"
-    unit_of_measurement: V
-    icon: mdi:battery-charging
-    optimistic: true
-  - platform: template
-    name: "${name} Charging current max"
-    id: "charging_current"
-    step: 1
-    min_value: 0
-    max_value: "${charge_a}"
-    mode: slider
-    initial_value: "${charge_a}"
-    unit_of_measurement: A
-    icon: mdi:current-dc
-    optimistic: true
-  - platform: template
-    name: "${name} Rebulk Offset V."
-    id: "rebulk_offset"
-    step: 0.2
-    min_value: 0
-    max_value: 4
-    mode: slider
-    initial_value: "${rebulk_offset_v}"
-    unit_of_measurement: V
-    icon: mdi:sine-wave
-    optimistic: true
-  - platform: template
-    name: "${name} Absorption time"
-    id: "absorption_time"
-    step: 1
-    min_value: 0
-    max_value: 180
-    mode: slider
-    initial_value: "${absorption_time}"
-    unit_of_measurement: min
-    icon: mdi:clock-start
-    optimistic: true
-  - platform: template
-    name: "${name} Absorption Offset V."
-    id: "absorption_offset"
-    step: 0.05
-    min_value: 0
-    max_value: 1
-    mode: slider
-    initial_value: "${absorption_offset_v}"
-    unit_of_measurement: V
-    icon: mdi:sine-wave
-    optimistic: true
-
-script:
-  - id: absorption_script
-    then:
-      - lambda: id(charge_status) = "Absorption";
-      # delay value in ms
-      - delay: !lambda "return id(absorption_time).state * 60 * 1000;"
-      - lambda: id(charge_status) = "Wait";
-
-switch:
-  - platform: template
-    name: ${name} Charging enabled
-    id: switch_charging
-    optimistic: true
-  - platform: template
-    name: ${name} Discharge enabled
-    id: switch_discharging
-    optimistic: true
-  - platform: template
-    name: ${name} Charging manually (top bal)
-    id: switch_chg_bulk
-    optimistic: true
-  - platform: template
-    name: ${name} Float charge
-    id: switch_chg_float
-    optimistic: true
