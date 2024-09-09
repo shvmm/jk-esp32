@@ -1,0 +1,44 @@
+# +---------------------------------------------+
+# |              ESPHome prepare                |
+# +---------------------------------------------+
+
+# LOG_LEVELS:  NONE < ERROR < WARN < INFO < DEBUG < VERBOSE < VERY_VERBOSE
+logger:
+  level: DEBUG
+
+ota:
+  - platform: esphome
+  # on_begin:
+  #   then:
+  #     - switch.turn_off: ble_client_switch0
+  #     - logger.log: "BLE connection suspended for OTA update"
+  # password: !secret ota_password
+  
+# Please use the native `api` component instead of the `mqtt` section.
+# If you use Home Assistant, the native API is more lightweight.
+# If there is no HA server connected to this API, the ESP32 reboots every 15 minutes to try to resolve the problem.
+# If you don't use Home Assistant please uncomment the "reboot_timeout: 0s" option.
+
+api:
+  reboot_timeout: 0s
+
+# In the event of problems with the WiFi network, the ESP32 will reboot every 15 minutes to try to resolve the problem.
+# If we don't want to connect the ESP32 to the WiFi network please remove the 4 lines below.
+
+wifi:
+  ssid: !secret wifi_ssid
+  password: !secret wifi_password
+  domain: !secret domain
+  # ap:
+  #   ssid: "ESP-JK-CAN Fallback"
+  #   password: "12345678"
+# captive_portal:
+
+# web_server:
+#   version: 3
+#   # auth:
+#   #   username: !secret web_server_username
+#   #   password: !secret web_server_password
+#   log: false
+#   # ota: false
+#   # local: true
