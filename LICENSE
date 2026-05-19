@@ -5,11 +5,11 @@ date:
   month: Feb
   year: 2025
 
-preamble:
+abstract:
   The licenses accompanying most of the softwares dictate what you're allowed to do.
   That is theoretically unfeasible because ideally creativity whether good (or bad) shouldn't and can't be encumbered.
   No one should be dictating, heck even attempt to predict what you can do.
-  Therefore, this license only says what you're NOT permitted to do.
+  Therefore, this `NotNot 0.1` license only says what you're NOT permitted to do.
 
 Main:
 
